@@ -46,29 +46,28 @@ activation_stack = []  # This is the handle to the namespace in the heap that ho
 
 def isEmpty():
   """check whether activation stack is empty or not"""
-  global activation_stack
+  #global activation_stack
   if len(activation_stack)==0:
       return true
 
 
 def pushHandle(handle):
   """ push handle on the activation_stack"""
-  global activation_stack
+  #global activation_stack
   # WRITE ME
   activation_stack.append(handle)
 
 def popHandle():
   """ pop a handle from stack """
-  global activation_stack
+  #global activation_stack
   # if  activation state is not empty 
   # WRITE ME
-  if not isEmpty:
-      activation_stack.pop()
+  return activation_stack.pop()
 
 def topHandle():
   """ return the top handel on the activation_stack"""
-  global activation_stack
-  if not isEmpty:
+  #global activation_stack
+  if not isEmpty():
      return activation_stack.pop()
 
 
@@ -76,7 +75,7 @@ def activeNS():
     """returns the handle of the namespace that holds the currently visible
        program variables
     """
-    global activation_stack
+    #global activation_stack
     if not isEmpty():
         return activation_stack[-1]
 
@@ -89,14 +88,15 @@ def declare(handle, field, rval) :
                rval -- an int or a handle
     """
     ## WRITE ME: # int x = 1 ["int", "x" ,"1"] heap[handle][field] = rval #heap = {handle:{field:rval}}
-    pass
+    if isLValid(handle,field):
+        crash("Variable already declared " + field)
+    heap[handle][field] = rval
     
 def initializeHeap():
     """resets the heap for a new program"""
     global heap_count, heap, activation_stack
     handle = allocateNS()  # create namespace in  heap  for global variables heap={'h0':{}}
-   # heap[handle]['parentns'] = 'nil'
-    # WRITE ME
+    heap[handle]['parentns'] = 'nil'
     pushHandle(handle)
     
 
@@ -152,6 +152,10 @@ def update(handle, field, rval) :
                 rval -- an int or a handle
     """
     ## REVISE THE FOLLOWING CODE TO MATCH THE ABOVE DOCUMENTATION:
+    if not isLValid(handle, field):
+        crash("Variable is not declared")
+    if not isinstance(rval, type(heap[handle][field])):
+        crash("Variable Type is not matched")
     heap[handle][field] = rval
 
 

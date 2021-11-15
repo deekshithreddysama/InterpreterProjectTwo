@@ -6,7 +6,7 @@ sys.path.append('../.') # add parent folder to  PYTHONPATH
 
 try:
     import a23pars
-    import interpretold
+    import interpret
 
     # If a filename has been specified, we read program from there:
     if len(sys.argv) == 2:
@@ -26,7 +26,7 @@ try:
     print("Parse tree:")
     print(tree)
     print("Execution:")
-    interpretold.interpretPTREE(tree)
+    interpret.interpretPTREE(tree)
 except:  # an error:
    import traceback
    traceback.print_exc()

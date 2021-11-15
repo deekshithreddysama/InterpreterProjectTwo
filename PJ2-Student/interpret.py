@@ -67,13 +67,13 @@ def interpretDTREE(d) :
        post:  heap is updated with  d
     """
     ### WRITE ME
-    active_ns = ....
+    active_ns = activeNS()
     
     # ["int", ID, ETREE]  |  ["proc", ID, ILIST, [], CLIST]
     # ["int", "x", "2"]  |  ["proc", "p", ['y', 'z'], [], [...]]
     if d[0] == 'int': # d = ["int", ID, ETREE] 
         var = d[1]
-        val = interpretETREE(...)
+        val = interpretETREE(d[2])
         declare(active_ns, var, val)
     # ["proc", ID, ILIST, [], CLIST]
     if d[0] == 'proc': 
@@ -82,13 +82,14 @@ def interpretDTREE(d) :
         proc_name = d[1]
         param_list = d[2]
         cmd_list = d[4]
+        local = d[3]
         handle = allocateNS() # heap[handle] = {} heap = {"h0":{...}, "h1":{}}
-        declare(....) # heap = {active_ns: {..., proc_name:handle, ...}}
+        declare(active_ns, proc_name, handle) # heap = {active_ns: {..., proc_name:handle, ...}}
         heap[handle]['type'] = 'proc'
-        heap[handle]['params'] = ...
-        heap[handle]['local'] = []
-        heap[handle]['body'] = ...
-        heap[handle]['parentns'] = ...
+        heap[handle]['params'] = param_list
+        heap[handle]['locals'] = local
+        heap[handle]['body'] = cmd_list
+        heap[handle]['link'] = active_ns
     
 
 
@@ -137,47 +138,50 @@ def interpretCTREE(c) :
             crash("we can't call a interger")
 
         # valid closure handle, then extract IL, CL, parentns link
-        if ininstance(closure_handle, str): 
+        if isinstance(closure_handle, str):
             # extract parameters
-            params_list = lookup(closure_handle, "params")
+            params_list = lookup(closure_handle, 'params')
             # extract procedure commands (body)
-            cmd_list = lookup(..., ...)
+
+            cmd_list = lookup(closure_handle, 'body')
+
             # extract link, where this procedure is defined
-            parent_ns = lookup(..., ...)
+
+            parent_ns = lookup(closure_handle, 'link')
         
-        # step (ii) evaluate EL to a list of values 
+        # step (ii) evaluate EL to a list of values
         params_vals = []
         for etree in c[2]:
-            val = interpretETREE(...)
-            params_vals.append(...)
+            val = interpretETREE(etree)
+            params_vals.append(val)
 
         # step (iii) Allocate a new namespace. 
-        new_ns = ...
+        new_ns = allocateNS()
 
-        # step (iv) Within the new namespace, bind parentns to the handle extracted from the closure; 
+        # step (iv) Within the new namespace, bind parentns to the handle extracted from the closure;
         # bind the values from EL to the corresponding names in IL. (Make certain that the number of arguments in EL equals the number of parameters in IL. Otherwise, it's an error that prints a message and stops execution).
 
-        # Within the new namespace, bind parentns to the handle extracted from the closure; 
-        heap[new_ns]["parentns"] = ... 
+        # Within the new namespace, bind parentns to the handle extracted from the closure;
+        heap[new_ns]["parentns"] = parent_ns
 
         # bind the values from EL to the corresponding names in IL. (Make certain that the number of arguments in EL equals the number of parameters in IL. Otherwise, it's an error that prints a message and stops execution).
         if len(params_list) != len(params_vals):
             crash("parameters don't match the definition")
         else:
             for param, val in zip(params_list, params_vals):
-                heap[new_ns][...] = ...
+                heap[new_ns][param] = val
 
         #  step (v) Push the new namespace's handle onto the activation stack, execute CL, and upon completion pop the activation stack.
-        pushHandle(...)
+        pushHandle(new_ns)
 
         # execute CL,
-        interpretCLIST(...)
+        interpretCLIST(cmd_list)
 
         # pop the activation stack.
-        ...
+        popHandle()
 
         # not requred, del the new name space
-        del heap[...]
+       # del heap[new_ns]
 
     else :  crash(c, "invalid command")
 
@@ -212,15 +216,23 @@ def interpretLTREE(ltree) :
        post: returns a pair,  (handle,varname),  the L-value of  ltree
     """
     # WRITE ME: MODIFY THE FUCNTION 
-    if isinstance(ltree, str) and  ltree[0].isalpha()  :  #  ID 
+    if isinstance(ltree, str) and  ltree[0].isalpha()  :  #  ID
+
      # if ltree is a valid variable name, then we need to check whether this ltree 
      # can be found or not in the current active namespace
 
      # find the current active namespace
      active_ns = activeNS()
+     ans = (None, None)
      # then check whether ltree in heap[active_ns] or not
      # if ltree not in heap[active_ns], then parent_ns = heap[active_ns]["parentns"], check whether ltree is in heap[parent_ns] or not
-        ans = (activeNS(), ltree)   # use the handle to the active namespace
+     if ltree in heap[active_ns]:
+         ans = (active_ns, ltree)
+     else:
+        parentns = heap[active_ns]['parentns']
+        if ltree in heap[parentns]:
+            ans = (parentns, ltree)
+     #ans = (active_ns, ltree)   # use the handle to the active namespace
 
     else :
         crash(ltree, "illegal L-value")

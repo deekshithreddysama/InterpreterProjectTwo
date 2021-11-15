@@ -106,8 +106,9 @@ def declare(handle, field, rval) :
        params: handle, field, as described above
                rval -- an int or a handle
     """
-    ## WRITE ME:
-    pass
+    if isLValid(handle, field):
+        crash("Variable is already declared " + field)
+    heap[handle][field] = rval
     
 
 def update(handle, field, rval) :
